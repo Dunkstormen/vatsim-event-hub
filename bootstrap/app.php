@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // No dedicated login page yet: users authenticate via VATSIM Connect OAuth only.
         $middleware->redirectGuestsTo('/');
+
+        // php artisan serve sits behind the Cloudflare tunnel over plain HTTP;
+        // trust its X-Forwarded-* headers so Laravel knows the original request was HTTPS.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

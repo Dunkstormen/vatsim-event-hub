@@ -24,6 +24,23 @@ Cloudflare account/signup, no cost).
 Builds frontend assets, runs staging migrations, and (re)starts both
 background processes. Prints the current tunnel URL at the end.
 
+## HTTPS behind the tunnel
+
+Cloudflare's quick tunnel terminates TLS and forwards plain HTTP to
+`php artisan serve`. Without help, Laravel generates asset/route URLs using
+the scheme of the request it actually received (`http://`), which browsers
+then block as mixed content on a page loaded over `https://`. Two things
+fix this:
+
+- `bootstrap/app.php` calls `$middleware->trustProxies(at: '*')` so Laravel
+  trusts the tunnel's `X-Forwarded-Proto` header.
+- `AppServiceProvider::boot()` calls `URL::forceScheme('https')` whenever
+  `APP_URL` starts with `https://`, as a second guarantee independent of
+  proxy headers.
+
+Both only take effect for `https://` `APP_URL`s (i.e. staging/production),
+so local dev (`APP_URL=http://localhost`) is unaffected.
+
 ## Known limitations
 
 - **URL is not stable.** A quick tunnel gets a new random URL every restart.
