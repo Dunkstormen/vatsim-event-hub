@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'vatsim' => [
+        'client_id' => env('VATSIM_CLIENT_ID'),
+        'client_secret' => env('VATSIM_CLIENT_SECRET'),
+        'redirect' => env('VATSIM_REDIRECT_URI'),
+        // https://auth.vatsim.net for production, https://auth-dev.vatsim.net for the sandbox.
+        'base_url' => env('VATSIM_CONNECT_BASE_URL', 'https://auth.vatsim.net'),
+    ],
+
 ];
