@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\AtcPositionInterestController;
+use App\Http\Controllers\AtcRosterAssignmentController;
+use App\Http\Controllers\AtcRosterController;
+use App\Http\Controllers\AtcShiftBookingController;
 use App\Http\Controllers\EventOccurrenceController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Http\Request;
@@ -23,6 +27,24 @@ Route::middleware(['auth'])->group(function () {
 
         return redirect('/');
     })->name('logout');
+
+    Route::post('occurrences/{eventOccurrence}/atc-positions/{atcPosition}/interest', [AtcPositionInterestController::class, 'store'])
+        ->name('atc-positions.interest.store');
+    Route::delete('occurrences/{eventOccurrence}/atc-positions/{atcPosition}/interest', [AtcPositionInterestController::class, 'destroy'])
+        ->name('atc-positions.interest.destroy');
+
+    Route::post('atc-shifts/{atcShift}/bookings', [AtcShiftBookingController::class, 'store'])
+        ->name('atc-shifts.bookings.store');
+    Route::delete('atc-shift-bookings/{atcShiftBooking}', [AtcShiftBookingController::class, 'destroy'])
+        ->name('atc-shift-bookings.destroy');
+
+    Route::post('occurrences/{eventOccurrence}/atc-positions/{atcPosition}/assignments', [AtcRosterAssignmentController::class, 'store'])
+        ->name('atc-roster-assignments.store');
+    Route::delete('atc-roster-assignments/{atcRosterAssignment}', [AtcRosterAssignmentController::class, 'destroy'])
+        ->name('atc-roster-assignments.destroy');
+
+    Route::post('occurrences/{eventOccurrence}/atc-roster/publish', [AtcRosterController::class, 'publish'])
+        ->name('atc-roster.publish');
 });
 
 require __DIR__.'/settings.php';
