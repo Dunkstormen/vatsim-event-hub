@@ -1,7 +1,9 @@
+import { SiteFooter } from '@/components/site-footer';
+import { SiteHeader } from '@/components/site-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { type SharedData } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { daysUntil, formatTimeRange, formatUtc } from '@/lib/event-format';
+import { Head, Link } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 interface EventCardData {
@@ -20,25 +22,7 @@ interface WelcomeProps {
 
 const MAX_VISIBLE_AIRPORTS = 4;
 
-function formatUtc(iso: string, options: Intl.DateTimeFormatOptions) {
-    return new Date(iso).toLocaleString('en-GB', { ...options, timeZone: 'UTC' });
-}
-
-function formatTimeRange(startsAt: string, endsAt: string) {
-    const start = formatUtc(startsAt, { hour: '2-digit', minute: '2-digit' });
-    const end = formatUtc(endsAt, { hour: '2-digit', minute: '2-digit' });
-
-    return `${start}–${end}z`;
-}
-
-function daysUntil(iso: string) {
-    const ms = new Date(iso).getTime() - Date.now();
-
-    return Math.max(0, Math.ceil(ms / 86_400_000));
-}
-
 export default function Welcome({ events, nextEvent }: WelcomeProps) {
-    const { auth } = usePage<SharedData>().props;
     const [yearFilter, setYearFilter] = useState<string>('all');
 
     const years = useMemo(() => {
@@ -55,13 +39,6 @@ export default function Welcome({ events, nextEvent }: WelcomeProps) {
         return events.filter((event) => formatUtc(event.starts_at, { year: 'numeric' }) === yearFilter);
     }, [events, yearFilter]);
 
-    const navLinks = [
-        { label: 'Events', href: '#events' },
-        { label: 'Calendar', href: '#' },
-        { label: 'Briefings', href: '#' },
-        { label: 'About', href: '#' },
-    ];
-
     return (
         <div className="dark">
             <Head title="Example vACC">
@@ -70,34 +47,7 @@ export default function Welcome({ events, nextEvent }: WelcomeProps) {
             </Head>
 
             <div className="bg-background text-foreground min-h-screen text-sm">
-                <header className="border-border bg-background sticky top-0 z-10 border-b">
-                    <div className="mx-auto flex h-[60px] max-w-6xl items-center gap-5 px-6">
-                        <div className="flex flex-none items-center gap-2.5 font-semibold whitespace-nowrap">
-                            <div className="bg-foreground text-background grid size-7 place-items-center rounded-md text-[11px]">XX</div>
-                            Example vACC
-                        </div>
-                        <nav className="flex min-w-0 flex-1 gap-1 overflow-hidden">
-                            {navLinks.map((link, index) => (
-                                <a
-                                    key={link.label}
-                                    href={link.href}
-                                    className={`rounded-md px-3 py-1.5 font-medium ${index === 0 ? 'text-foreground' : 'text-muted-foreground'}`}
-                                >
-                                    {link.label}
-                                </a>
-                            ))}
-                        </nav>
-                        {auth.user ? (
-                            <Link href={route('dashboard')} className="flex-none">
-                                <Button size="sm">Dashboard</Button>
-                            </Link>
-                        ) : (
-                            <a href={route('auth.vatsim.redirect')} className="flex-none">
-                                <Button size="sm">Log in with VATSIM</Button>
-                            </a>
-                        )}
-                    </div>
-                </header>
+                <SiteHeader />
 
                 <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-18 pb-12 md:grid-cols-2">
                     <div className="flex flex-col gap-5">
@@ -133,9 +83,9 @@ export default function Welcome({ events, nextEvent }: WelcomeProps) {
                                         {formatTimeRange(nextEvent.starts_at, nextEvent.ends_at)}
                                         {nextEvent.airports[0] ? <> &middot; {nextEvent.airports[0]}</> : null}
                                     </div>
-                                    <a href="#events" className="font-medium">
+                                    <Link href={route('events.show', nextEvent.id)} className="font-medium">
                                         View event details &rarr;
-                                    </a>
+                                    </Link>
                                 </>
                             ) : (
                                 <div className="text-muted-foreground">No events are scheduled yet. Check back soon.</div>
@@ -210,9 +160,12 @@ export default function Welcome({ events, nextEvent }: WelcomeProps) {
                                             {event.description && (
                                                 <p className="text-muted-foreground line-clamp-3 text-pretty">{event.description}</p>
                                             )}
-                                            <a href="#events" className="mt-auto inline-flex items-center gap-1.5 pt-2 font-medium">
+                                            <Link
+                                                href={route('events.show', event.id)}
+                                                className="mt-auto inline-flex items-center gap-1.5 pt-2 font-medium"
+                                            >
                                                 View event details <span>&rarr;</span>
-                                            </a>
+                                            </Link>
                                         </div>
                                     </article>
                                 );
@@ -225,12 +178,7 @@ export default function Welcome({ events, nextEvent }: WelcomeProps) {
                     )}
                 </section>
 
-                <footer className="border-border border-t px-6 py-6">
-                    <div className="text-muted-foreground mx-auto flex max-w-6xl flex-wrap justify-between gap-4 text-[13px]">
-                        <span>Example vACC &middot; Part of VATSIM</span>
-                        <span>For flight simulation use only. Not for real-world navigation.</span>
-                    </div>
-                </footer>
+                <SiteFooter />
             </div>
         </div>
     );

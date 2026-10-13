@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EventOccurrenceController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -7,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('events/{eventOccurrence}', [EventOccurrenceController::class, 'show'])->name('events.show');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
