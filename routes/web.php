@@ -1,13 +1,12 @@
 <?php
 
+use App\Http\Controllers\HomeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
+Route::get('/', HomeController::class)->name('home');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
