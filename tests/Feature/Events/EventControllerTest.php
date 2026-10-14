@@ -112,6 +112,18 @@ class EventControllerTest extends TestCase
         Storage::disk('public')->assertExists($event->banner_path);
     }
 
+    public function test_oversized_banner_upload_is_rejected_with_a_clear_error(): void
+    {
+        Storage::fake('public');
+        $user = $this->eventManager();
+
+        $this->actingAs($user)->post(route('events.store'), array_merge($this->validPayload(), [
+            'banner' => UploadedFile::fake()->create('banner.jpg', 6000, 'image/jpeg'),
+        ]))->assertSessionHasErrors('banner');
+
+        $this->assertDatabaseMissing('events', ['title' => 'Capital Overload']);
+    }
+
     public function test_event_manager_can_delete_an_event(): void
     {
         $user = $this->eventManager();
