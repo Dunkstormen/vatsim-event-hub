@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
 class EventControllerTest extends TestCase
@@ -109,6 +110,31 @@ class EventControllerTest extends TestCase
 
         $event = Event::query()->where('title', 'Capital Overload')->firstOrFail();
         $this->assertNotNull($event->banner_path);
+        Storage::disk('public')->assertExists($event->banner_path);
+    }
+
+    public function test_event_manager_banner_upload_is_converted_to_webp(): void
+    {
+        if ((new Process(['which', 'cwebp']))->run() !== 0) {
+            $this->markTestSkipped('cwebp binary is not available in this environment.');
+        }
+
+        Storage::fake('public');
+        $user = $this->eventManager();
+
+        $this->actingAs($user)->post(route('events.store'), array_merge($this->validPayload(), [
+            'banner' => new UploadedFile(
+                base_path('tests/Fixtures/banner.png'),
+                'banner.png',
+                'image/png',
+                null,
+                true,
+            ),
+        ]))->assertRedirect(route('events.index'));
+
+        $event = Event::query()->where('title', 'Capital Overload')->firstOrFail();
+        $this->assertNotNull($event->banner_path);
+        $this->assertStringEndsWith('.webp', $event->banner_path);
         Storage::disk('public')->assertExists($event->banner_path);
     }
 

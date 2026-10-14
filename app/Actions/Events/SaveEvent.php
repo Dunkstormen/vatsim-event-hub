@@ -4,6 +4,10 @@ namespace App\Actions\Events;
 
 use App\Models\Event;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Symfony\Component\Process\Process;
 
 class SaveEvent
 {
@@ -27,7 +31,7 @@ class SaveEvent
         );
 
         if ($banner !== null) {
-            $attributes['banner_path'] = $banner->store('event-banners', 'public');
+            $attributes['banner_path'] = $this->convertToWebp($banner->store('event-banners', 'public'));
         }
 
         $event->fill($attributes);
@@ -38,5 +42,35 @@ class SaveEvent
         }
 
         return $event;
+    }
+
+    /**
+     * Re-encode the stored banner as WebP via the `cwebp` CLI (no GD/Imagick
+     * extension is available in this environment). Falls back to the
+     * original upload if the binary is missing or conversion fails, so a
+     * banner upload never breaks because of this step.
+     */
+    private function convertToWebp(string $storedPath): string
+    {
+        $disk = Storage::disk('public');
+        $webpPath = Str::beforeLast($storedPath, '.').'.webp';
+
+        $process = new Process([
+            'cwebp', '-quiet', '-q', '80', $disk->path($storedPath), '-o', $disk->path($webpPath),
+        ]);
+        $process->run();
+
+        if (! $process->isSuccessful() || ! $disk->exists($webpPath)) {
+            Log::warning('Banner WebP conversion failed, keeping original upload.', [
+                'path' => $storedPath,
+                'error' => $process->getErrorOutput(),
+            ]);
+
+            return $storedPath;
+        }
+
+        $disk->delete($storedPath);
+
+        return $webpPath;
     }
 }
