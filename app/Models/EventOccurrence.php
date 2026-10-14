@@ -100,7 +100,7 @@ class EventOccurrence extends Model
      * Serialized shape used by the homepage and event index event cards.
      * Expects `event.airports` to already be eager loaded.
      *
-     * @return array{id: int, title: string, description: ?string, starts_at: string, ends_at: string, airports: list<string>}
+     * @return array{id: int, event_id: int, title: string, description: ?string, starts_at: string, ends_at: string, airports: list<string>}
      */
     public function toEventCardArray(): array
     {
@@ -112,6 +112,7 @@ class EventOccurrence extends Model
 
         return [
             'id' => $this->id,
+            'event_id' => $this->event_id,
             'title' => $this->event->title,
             'description' => $this->event->description,
             'starts_at' => $this->starts_at->toIso8601String(),

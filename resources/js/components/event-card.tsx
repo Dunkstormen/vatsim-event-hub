@@ -1,9 +1,11 @@
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { formatTimeRange, formatUtc } from '@/lib/event-format';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 
 export interface EventCardData {
     id: number;
+    event_id: number;
     title: string;
     description: string | null;
     starts_at: string;
@@ -13,7 +15,15 @@ export interface EventCardData {
 
 const MAX_VISIBLE_AIRPORTS = 4;
 
-export function EventCard({ event }: { event: EventCardData }) {
+export function EventCard({ event, canManage = false }: { event: EventCardData; canManage?: boolean }) {
+    function destroy() {
+        if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) {
+            return;
+        }
+
+        router.delete(route('events.destroy', event.event_id), { preserveScroll: true });
+    }
+
     const visibleAirports = event.airports.slice(0, MAX_VISIBLE_AIRPORTS);
     const extraAirports = event.airports.length - visibleAirports.length;
 
@@ -45,9 +55,21 @@ export function EventCard({ event }: { event: EventCardData }) {
                     </div>
                 )}
                 {event.description && <p className="text-muted-foreground line-clamp-3 text-pretty">{event.description}</p>}
-                <Link href={route('events.show', event.id)} className="mt-auto inline-flex items-center gap-1.5 pt-2 font-medium">
-                    View event details <span>&rarr;</span>
-                </Link>
+                <div className="mt-auto flex items-center justify-between gap-3 pt-2">
+                    <Link href={route('events.show', event.id)} className="inline-flex items-center gap-1.5 font-medium">
+                        View event details <span>&rarr;</span>
+                    </Link>
+                    {canManage && (
+                        <div className="flex gap-2">
+                            <Button size="sm" variant="outline" asChild>
+                                <Link href={route('events.edit', event.event_id)}>Edit</Link>
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={destroy}>
+                                Delete
+                            </Button>
+                        </div>
+                    )}
+                </div>
             </div>
         </article>
     );

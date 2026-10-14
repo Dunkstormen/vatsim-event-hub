@@ -4,6 +4,7 @@ use App\Http\Controllers\AtcPositionInterestController;
 use App\Http\Controllers\AtcRosterAssignmentController;
 use App\Http\Controllers\AtcRosterController;
 use App\Http\Controllers\AtcShiftBookingController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventFeedController;
 use App\Http\Controllers\EventIndexController;
 use App\Http\Controllers\EventOccurrenceController;
@@ -16,12 +17,18 @@ use Inertia\Inertia;
 Route::get('/', HomeController::class)->name('home');
 Route::get('events', EventIndexController::class)->name('events.index');
 Route::get('events-feed', EventFeedController::class)->name('events.feed');
+Route::get('events/create', [EventController::class, 'create'])->middleware('auth')->name('events.create');
 Route::get('events/{eventOccurrence}', [EventOccurrenceController::class, 'show'])->name('events.show');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+
+    Route::post('events', [EventController::class, 'store'])->name('events.store');
+    Route::get('events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
+    Route::put('events/{event}', [EventController::class, 'update'])->name('events.update');
+    Route::delete('events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
 
     Route::post('logout', function (Request $request) {
         Auth::guard('web')->logout();

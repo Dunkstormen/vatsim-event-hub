@@ -1,7 +1,9 @@
 import { EventCard, type EventCardData } from '@/components/event-card';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
-import { Head, router } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { type SharedData } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface EventIndexProps {
@@ -18,6 +20,8 @@ interface EventFeedResponse {
 }
 
 export default function EventIndex({ events, years, year, search, nextPage }: EventIndexProps) {
+    const { auth } = usePage<SharedData>().props;
+    const canManage = auth.can.manageEvents;
     const [loadedEvents, setLoadedEvents] = useState<EventCardData[]>(events);
     const [page, setPage] = useState<number | null>(nextPage);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -119,6 +123,11 @@ export default function EventIndex({ events, years, year, search, nextPage }: Ev
                             <h1 className="text-3xl font-semibold tracking-tight">Upcoming events</h1>
                             <p className="text-muted-foreground mt-1">Times are in UTC.</p>
                         </div>
+                        {canManage && (
+                            <Button asChild>
+                                <Link href={route('events.create')}>New event</Link>
+                            </Button>
+                        )}
                         {years.length > 1 && (
                             <div className="bg-muted flex gap-0.5 rounded-lg p-1">
                                 {['all', ...years].map((option) => (
@@ -149,7 +158,7 @@ export default function EventIndex({ events, years, year, search, nextPage }: Ev
                         <>
                             <div className="grid [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] gap-4">
                                 {loadedEvents.map((event) => (
-                                    <EventCard key={event.id} event={event} />
+                                    <EventCard key={event.id} event={event} canManage={canManage} />
                                 ))}
                             </div>
                             {page !== null && (
