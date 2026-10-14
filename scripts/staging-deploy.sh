@@ -30,7 +30,7 @@ echo "==> restarting php artisan serve"
 pkill -f "artisan serve --env=staging" 2>/dev/null || true
 sleep 1
 mkdir -p storage/staging
-nohup php -d upload_max_filesize=10M -d post_max_size=12M artisan serve --env=staging --host=127.0.0.1 --port=8010 > storage/staging/serve.log 2>&1 &
+PHPRC="$(pwd)/php.ini" nohup php artisan serve --env=staging --host=127.0.0.1 --port=8010 --no-reload > storage/staging/serve.log 2>&1 &
 disown
 sleep 2
 curl -sf -o /dev/null http://127.0.0.1:8010/ && echo "local app is responding on 127.0.0.1:8010"
