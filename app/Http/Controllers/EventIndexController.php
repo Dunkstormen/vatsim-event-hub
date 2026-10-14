@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\EventOccurrenceStatus;
-use App\Enums\EventStatus;
 use App\Models\EventOccurrence;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -11,20 +9,34 @@ use Inertia\Response;
 
 class EventIndexController extends Controller
 {
+    public const PER_PAGE = 9;
+
     public function __invoke(Request $request): Response
     {
-        $occurrences = EventOccurrence::query()
-            ->with(['event.airports'])
-            ->whereHas('event', fn ($query) => $query->where('status', EventStatus::Published))
-            ->where('status', EventOccurrenceStatus::Scheduled)
-            ->where('starts_at', '>=', now())
-            ->orderBy('starts_at')
-            ->get();
+        $year = $request->query('year');
 
-        $events = $occurrences->map(fn (EventOccurrence $occurrence) => $occurrence->toEventCardArray())->values();
+        $paginator = EventOccurrence::query()
+            ->upcomingPublished()
+            ->when($year, fn ($query) => $query->whereYear('starts_at', $year))
+            ->paginate(self::PER_PAGE);
+
+        $events = collect($paginator->items())
+            ->map(fn (EventOccurrence $occurrence) => $occurrence->toEventCardArray())
+            ->values();
+
+        $years = EventOccurrence::query()
+            ->upcomingPublished()
+            ->get(['starts_at'])
+            ->map(fn (EventOccurrence $occurrence) => $occurrence->starts_at->format('Y'))
+            ->unique()
+            ->sort()
+            ->values();
 
         return Inertia::render('events/index', [
             'events' => $events,
+            'nextPage' => $paginator->hasMorePages() ? $paginator->currentPage() + 1 : null,
+            'years' => $years,
+            'year' => $year,
         ]);
     }
 }

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\AtcRosterType;
 use App\Enums\EventOccurrenceStatus;
+use App\Enums\EventStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -41,6 +43,20 @@ class EventOccurrence extends Model
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
+    }
+
+    /**
+     * Scheduled occurrences of published events that start in the future,
+     * ordered soonest first. Shared by the homepage and the events index.
+     */
+    public function scopeUpcomingPublished(Builder $query): Builder
+    {
+        return $query
+            ->with(['event.airports'])
+            ->whereHas('event', fn ($query) => $query->where('status', EventStatus::Published))
+            ->where('status', EventOccurrenceStatus::Scheduled)
+            ->where('starts_at', '>=', now())
+            ->orderBy('starts_at');
     }
 
     public function positionInterests(): HasMany

@@ -73,6 +73,38 @@ class EventIndexTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('events/index')
-                ->has('events', 8));
+                ->has('events', 8)
+                ->where('nextPage', null));
+    }
+
+    public function test_event_index_paginates_and_exposes_next_page(): void
+    {
+        Event::factory()
+            ->published()
+            ->count(10)
+            ->sequence(fn ($sequence) => ['starts_at' => now()->addDays($sequence->index + 1)])
+            ->create();
+
+        $this->get(route('events.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('events/index')
+                ->has('events', 9)
+                ->where('nextPage', 2));
+    }
+
+    public function test_event_feed_returns_the_next_page_of_events(): void
+    {
+        Event::factory()
+            ->published()
+            ->count(10)
+            ->sequence(fn ($sequence) => ['starts_at' => now()->addDays($sequence->index + 1)])
+            ->create();
+
+        $response = $this->getJson(route('events.feed', ['page' => 2]))
+            ->assertOk();
+
+        $response->assertJsonCount(1, 'events');
+        $response->assertJson(['nextPage' => null]);
     }
 }

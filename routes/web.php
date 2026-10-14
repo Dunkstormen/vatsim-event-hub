@@ -4,6 +4,7 @@ use App\Http\Controllers\AtcPositionInterestController;
 use App\Http\Controllers\AtcRosterAssignmentController;
 use App\Http\Controllers\AtcRosterController;
 use App\Http\Controllers\AtcShiftBookingController;
+use App\Http\Controllers\EventFeedController;
 use App\Http\Controllers\EventIndexController;
 use App\Http\Controllers\EventOccurrenceController;
 use App\Http\Controllers\HomeController;
@@ -14,6 +15,7 @@ use Inertia\Inertia;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('events', EventIndexController::class)->name('events.index');
+Route::get('events-feed', EventFeedController::class)->name('events.feed');
 Route::get('events/{eventOccurrence}', [EventOccurrenceController::class, 'show'])->name('events.show');
 
 Route::middleware(['auth'])->group(function () {
