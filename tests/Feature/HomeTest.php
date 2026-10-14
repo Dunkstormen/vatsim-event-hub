@@ -48,6 +48,21 @@ class HomeTest extends TestCase
                 ->where('nextEvent.title', 'Capital Overload'));
     }
 
+    public function test_home_page_limits_events_to_six(): void
+    {
+        Event::factory()
+            ->published()
+            ->count(8)
+            ->sequence(fn ($sequence) => ['starts_at' => now()->addDays($sequence->index + 1)])
+            ->create();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('welcome')
+                ->has('events', 6));
+    }
+
     public function test_home_page_excludes_past_events(): void
     {
         Event::factory()->published()->create([

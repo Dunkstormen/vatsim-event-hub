@@ -3,13 +3,13 @@ import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 
 const NAV_LINKS = [
-    { label: 'Events', href: '/#events' },
+    { label: 'Events', href: route('events.index') },
     { label: 'Calendar', href: '#' },
     { label: 'Briefings', href: '#' },
     { label: 'About', href: '#' },
 ];
 
-export function SiteHeader({ activeLabel = 'Events' }: { activeLabel?: string }) {
+export function SiteHeader({ activeLabel }: { activeLabel?: string }) {
     const { auth } = usePage<SharedData>().props;
 
     return (

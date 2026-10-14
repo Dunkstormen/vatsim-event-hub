@@ -11,6 +11,8 @@ use Inertia\Response;
 
 class HomeController extends Controller
 {
+    private const FRONTPAGE_EVENT_LIMIT = 6;
+
     public function __invoke(Request $request): Response
     {
         $occurrences = EventOccurrence::query()
@@ -19,25 +21,10 @@ class HomeController extends Controller
             ->where('status', EventOccurrenceStatus::Scheduled)
             ->where('starts_at', '>=', now())
             ->orderBy('starts_at')
-            ->limit(12)
+            ->limit(self::FRONTPAGE_EVENT_LIMIT)
             ->get();
 
-        $events = $occurrences->map(function (EventOccurrence $occurrence) {
-            $event = $occurrence->event;
-            $airports = $event->airports
-                ->sortByDesc('is_featured')
-                ->pluck('icao_code')
-                ->values();
-
-            return [
-                'id' => $occurrence->id,
-                'title' => $event->title,
-                'description' => $event->description,
-                'starts_at' => $occurrence->starts_at->toIso8601String(),
-                'ends_at' => $occurrence->ends_at->toIso8601String(),
-                'airports' => $airports,
-            ];
-        })->values();
+        $events = $occurrences->map(fn (EventOccurrence $occurrence) => $occurrence->toEventCardArray())->values();
 
         return Inertia::render('welcome', [
             'events' => $events,

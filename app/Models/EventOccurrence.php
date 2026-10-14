@@ -64,6 +64,30 @@ class EventOccurrence extends Model
     }
 
     /**
+     * Serialized shape used by the homepage and event index event cards.
+     * Expects `event.airports` to already be eager loaded.
+     *
+     * @return array{id: int, title: string, description: ?string, starts_at: string, ends_at: string, airports: list<string>}
+     */
+    public function toEventCardArray(): array
+    {
+        $airports = $this->event->airports
+            ->sortByDesc('is_featured')
+            ->pluck('icao_code')
+            ->values()
+            ->all();
+
+        return [
+            'id' => $this->id,
+            'title' => $this->event->title,
+            'description' => $this->event->description,
+            'starts_at' => $this->starts_at->toIso8601String(),
+            'ends_at' => $this->ends_at->toIso8601String(),
+            'airports' => $airports,
+        ];
+    }
+
+    /**
      * Whether the open-interest window is currently open for this
      * occurrence, based on the owning event's configured offsets.
      */
