@@ -88,8 +88,8 @@ export default function EventIndex({ events, years, year, search, nextPage }: Ev
         }
 
         router.get(route('events.index'), params, {
-            preserveState: false,
-            preserveScroll: false,
+            preserveState: true,
+            preserveScroll: true,
         });
     };
 
