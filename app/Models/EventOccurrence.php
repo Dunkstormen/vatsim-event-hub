@@ -59,6 +59,23 @@ class EventOccurrence extends Model
             ->orderBy('starts_at');
     }
 
+    /**
+     * Restrict to events whose title, description, or airport ICAO codes
+     * match the given search term. Shared by the events index and feed.
+     */
+    public function scopeSearch(Builder $query, ?string $search): Builder
+    {
+        if ($search === null || trim($search) === '') {
+            return $query;
+        }
+
+        return $query->whereHas('event', function (Builder $query) use ($search) {
+            $query->where('title', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%")
+                ->orWhereHas('airports', fn ($query) => $query->where('icao_code', 'like', "%{$search}%"));
+        });
+    }
+
     public function positionInterests(): HasMany
     {
         return $this->hasMany(AtcPositionInterest::class);

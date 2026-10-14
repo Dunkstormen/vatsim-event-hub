@@ -107,4 +107,83 @@ class EventIndexTest extends TestCase
         $response->assertJsonCount(1, 'events');
         $response->assertJson(['nextPage' => null]);
     }
+
+    public function test_event_index_search_matches_title(): void
+    {
+        Event::factory()->published()->create([
+            'title' => 'Capital Overload',
+            'starts_at' => now()->addWeek(),
+        ]);
+        Event::factory()->published()->create([
+            'title' => 'Cross the Pond',
+            'starts_at' => now()->addWeek(),
+        ]);
+
+        $this->get(route('events.index', ['search' => 'capital']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('events/index')
+                ->has('events', 1)
+                ->where('events.0.title', 'Capital Overload'));
+    }
+
+    public function test_event_index_search_matches_description(): void
+    {
+        Event::factory()->published()->create([
+            'title' => 'Capital Overload',
+            'description' => 'A fly-in to EXAA.',
+            'starts_at' => now()->addWeek(),
+        ]);
+        Event::factory()->published()->create([
+            'title' => 'Cross the Pond',
+            'description' => 'Oceanic crossing event.',
+            'starts_at' => now()->addWeek(),
+        ]);
+
+        $this->get(route('events.index', ['search' => 'fly-in']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('events/index')
+                ->has('events', 1)
+                ->where('events.0.title', 'Capital Overload'));
+    }
+
+    public function test_event_index_search_matches_airport_icao(): void
+    {
+        $event = Event::factory()->published()->create([
+            'title' => 'Capital Overload',
+            'starts_at' => now()->addWeek(),
+        ]);
+        EventAirport::factory()->for($event)->create(['icao_code' => 'EXAA']);
+
+        Event::factory()->published()->create([
+            'title' => 'Cross the Pond',
+            'starts_at' => now()->addWeek(),
+        ]);
+
+        $this->get(route('events.index', ['search' => 'EXAA']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('events/index')
+                ->has('events', 1)
+                ->where('events.0.title', 'Capital Overload'));
+    }
+
+    public function test_event_feed_respects_search(): void
+    {
+        Event::factory()->published()->create([
+            'title' => 'Capital Overload',
+            'starts_at' => now()->addWeek(),
+        ]);
+        Event::factory()->published()->create([
+            'title' => 'Cross the Pond',
+            'starts_at' => now()->addWeek(),
+        ]);
+
+        $response = $this->getJson(route('events.feed', ['search' => 'capital']))
+            ->assertOk();
+
+        $response->assertJsonCount(1, 'events');
+        $response->assertJsonPath('events.0.title', 'Capital Overload');
+    }
 }

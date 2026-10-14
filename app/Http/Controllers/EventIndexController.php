@@ -14,10 +14,12 @@ class EventIndexController extends Controller
     public function __invoke(Request $request): Response
     {
         $year = $request->query('year');
+        $search = $request->query('search');
 
         $paginator = EventOccurrence::query()
             ->upcomingPublished()
             ->when($year, fn ($query) => $query->whereYear('starts_at', $year))
+            ->search($search)
             ->paginate(self::PER_PAGE);
 
         $events = collect($paginator->items())
@@ -37,6 +39,7 @@ class EventIndexController extends Controller
             'nextPage' => $paginator->hasMorePages() ? $paginator->currentPage() + 1 : null,
             'years' => $years,
             'year' => $year,
+            'search' => $search,
         ]);
     }
 }

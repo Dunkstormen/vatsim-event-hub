@@ -8,6 +8,7 @@ interface EventIndexProps {
     events: EventCardData[];
     years: string[];
     year: string | null;
+    search: string | null;
     nextPage: number | null;
 }
 
@@ -16,16 +17,21 @@ interface EventFeedResponse {
     nextPage: number | null;
 }
 
-export default function EventIndex({ events, years, year, nextPage }: EventIndexProps) {
+export default function EventIndex({ events, years, year, search, nextPage }: EventIndexProps) {
     const [loadedEvents, setLoadedEvents] = useState<EventCardData[]>(events);
     const [page, setPage] = useState<number | null>(nextPage);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [searchInput, setSearchInput] = useState(search ?? '');
     const sentinelRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         setLoadedEvents(events);
         setPage(nextPage);
     }, [events, nextPage]);
+
+    useEffect(() => {
+        setSearchInput(search ?? '');
+    }, [search]);
 
     const loadMore = useCallback(async () => {
         if (page === null || isLoadingMore) {
@@ -38,6 +44,9 @@ export default function EventIndex({ events, years, year, nextPage }: EventIndex
         if (year) {
             params.set('year', year);
         }
+        if (search) {
+            params.set('search', search);
+        }
 
         const response = await fetch(`${route('events.feed')}?${params.toString()}`, {
             headers: { Accept: 'application/json' },
@@ -47,7 +56,7 @@ export default function EventIndex({ events, years, year, nextPage }: EventIndex
         setLoadedEvents((previous) => [...previous, ...data.events]);
         setPage(data.nextPage);
         setIsLoadingMore(false);
-    }, [page, isLoadingMore, year]);
+    }, [page, isLoadingMore, year, search]);
 
     useEffect(() => {
         const sentinel = sentinelRef.current;
@@ -69,12 +78,33 @@ export default function EventIndex({ events, years, year, nextPage }: EventIndex
         return () => observer.disconnect();
     }, [loadMore, page]);
 
-    const setYearFilter = (nextYear: string) => {
-        router.get(route('events.index'), nextYear === 'all' ? {} : { year: nextYear }, {
+    const visitWithFilters = (nextYear: string | null, nextSearch: string) => {
+        const params: Record<string, string> = {};
+        if (nextYear && nextYear !== 'all') {
+            params.year = nextYear;
+        }
+        if (nextSearch.trim() !== '') {
+            params.search = nextSearch.trim();
+        }
+
+        router.get(route('events.index'), params, {
             preserveState: false,
             preserveScroll: false,
         });
     };
+
+    const setYearFilter = (nextYear: string) => visitWithFilters(nextYear, searchInput);
+
+    useEffect(() => {
+        const trimmed = searchInput.trim();
+        if (trimmed === (search ?? '')) {
+            return;
+        }
+
+        const timeout = setTimeout(() => visitWithFilters(year, searchInput), 400);
+        return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchInput]);
 
     return (
         <div className="dark">
@@ -106,6 +136,15 @@ export default function EventIndex({ events, years, year, nextPage }: EventIndex
                         )}
                     </div>
 
+                    <input
+                        type="search"
+                        value={searchInput}
+                        onChange={(event) => setSearchInput(event.target.value)}
+                        placeholder="Search events by title, description, or airport…"
+                        aria-label="Search events"
+                        className="border-border bg-muted/40 placeholder:text-muted-foreground w-full max-w-md rounded-lg border px-3 py-2 text-sm focus:outline-none"
+                    />
+
                     {loadedEvents.length > 0 ? (
                         <>
                             <div className="grid [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] gap-4">
@@ -121,7 +160,7 @@ export default function EventIndex({ events, years, year, nextPage }: EventIndex
                         </>
                     ) : (
                         <div className="border-border text-muted-foreground rounded-xl border px-6 py-16 text-center">
-                            No upcoming events match this filter yet.
+                            No upcoming events match {search ? 'your search' : 'this filter'} yet.
                         </div>
                     )}
                 </section>

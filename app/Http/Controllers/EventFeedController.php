@@ -11,10 +11,12 @@ class EventFeedController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $year = $request->query('year');
+        $search = $request->query('search');
 
         $paginator = EventOccurrence::query()
             ->upcomingPublished()
             ->when($year, fn ($query) => $query->whereYear('starts_at', $year))
+            ->search($search)
             ->paginate(EventIndexController::PER_PAGE, page: (int) $request->query('page', 1));
 
         $events = collect($paginator->items())
