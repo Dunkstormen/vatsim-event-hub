@@ -33,7 +33,7 @@ function toDateTimeLocal(iso: string): string {
 export function EventForm({ event, submitUrl, submitMethod, submitLabel }: EventFormProps) {
     const [bannerPreview, setBannerPreview] = useState<string | null>(event?.banner_path ? `/storage/${event.banner_path}` : null);
 
-    const { data, setData, post, put, processing, errors } = useForm({
+    const { data, setData, post, transform, processing, errors } = useForm({
         title: event?.title ?? '',
         description: event?.description ?? '',
         status: event?.status ?? ('draft' as EventStatus),
@@ -51,7 +51,13 @@ export function EventForm({ event, submitUrl, submitMethod, submitLabel }: Event
         if (submitMethod === 'post') {
             post(submitUrl, options);
         } else {
-            put(submitUrl, options);
+            // Inertia's `put()` issues a real HTTP PUT. PHP's SAPI only parses
+            // multipart/form-data bodies into $_POST/$_FILES for POST requests,
+            // so a PUT with a file attached silently loses every field. Spoof
+            // the method via `_method` on a POST instead (the documented
+            // Inertia pattern for file uploads on update).
+            transform((data) => ({ ...data, _method: 'put' }));
+            post(submitUrl, options);
         }
     };
 
