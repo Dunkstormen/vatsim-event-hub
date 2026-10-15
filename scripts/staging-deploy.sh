@@ -11,6 +11,15 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-$HOME/.local/micromamba}"
 export PATH="$HOME/.local/micromamba/envs/php/bin:$HOME/.local/bin:$PATH"
 
+# A real OS environment variable always wins over .env.staging (Laravel's env()
+# helper checks getenv() first). If APP_URL/APP_ENV were ever exported or
+# inline-assigned in the shell that launched `php artisan serve` (e.g. during
+# manual debugging), that stale value gets inherited by the long-lived server
+# process and survives every future `pkill`+restart of this script, silently
+# ignoring whatever APP_URL is set to in .env.staging. Strip them here so each
+# deploy always picks up .env.staging fresh, regardless of the caller's shell.
+unset APP_URL APP_ENV
+
 if [ ! -f .env.staging ]; then
   echo ".env.staging is missing. Copy .env.staging.example and fill in APP_KEY/APP_URL/VATSIM creds first." >&2
   exit 1
